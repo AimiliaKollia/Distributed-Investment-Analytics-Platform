@@ -41,7 +41,7 @@ def run_server():
                         c.send((msg + '\n').encode())
 
                     current_date = valid_date
-                    time.sleep(3)
+                    time.sleep(5)
 
             except (ConnectionResetError, BrokenPipeError):
                 print("Client disconnected. Waiting for new connection...")

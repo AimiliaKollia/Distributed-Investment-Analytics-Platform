@@ -16,22 +16,37 @@ class InvestorEngine:
 
         # Kafka Producer for 'portfolios' topic
         self.producer = KafkaProducer(
-            bootstrap_servers=['localhost:9092'],
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+            bootstrap_servers=['127.0.0.1:9092'],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            # Force a version that doesn't trigger the metadata version error
+            api_version=(0, 10, 1),
+            # Ensure the producer doesn't wait indefinitely if the broker is unreachable
+            request_timeout_ms=5000,
+            metadata_max_age_ms=30000
         )
 
     def process_message(self, data):
-        """Filters incoming stock data and triggers calculation when a day is complete."""
         with self.lock:
             date, ticker, price = data['date'], data['ticker'], data['price']
+
             if ticker not in self.all_watched_stocks:
                 return
 
             self.daily_cache.setdefault(date, {})[ticker] = price
 
-            # Check if we have all unique stocks needed for this investor for the day
-            if len(self.daily_cache[date]) == len(self.all_watched_stocks):
+            current_count = len(self.daily_cache[date])
+            required_count = len(self.all_watched_stocks)
+
+            # DEBUG PRINT: This will tell you exactly why the gate is stuck
+            print(
+                f"[{self.investor_name}] Date: {date} | Collected: {current_count}/{required_count} | Just added: {ticker}")
+
+            if current_count == required_count:
+                print(f"--- [OK] Gate opened for {date}. Calculating NAV... ---")
                 self.calculate_daily_metrics(date)
+            elif current_count > required_count:
+                # This would imply duplicate tickers for the same date
+                print(f"!!! [ERROR] Duplicate data detected for {date}")
 
     def calculate_daily_metrics(self, date):
         """Calculates NAV, Change, and % Change for each managed portfolio """
@@ -81,7 +96,8 @@ class InvestorEngine:
 
         def kafka_listener():
             consumer = KafkaConsumer('StockExchange', bootstrap_servers=['localhost:9092'],
-                                     value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+                                     value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+                                    api_version=(0, 10))
             for msg in consumer:
                 self.process_message(msg.value)
 
