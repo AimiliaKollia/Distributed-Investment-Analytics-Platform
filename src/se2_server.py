@@ -44,7 +44,7 @@ def run_server():
                 print(f"[DEBUG] Sending: {msg}")
                 producer.send('StockExchange', value=msg).add_callback(on_send_success).add_errback(on_send_error)
             producer.flush()
-            current_date = valid_date + timedelta(days=1)  # <-- key fix
+            current_date = valid_date
     except KeyboardInterrupt:
         print("\nSE2 Server shutting down.")
     finally:
