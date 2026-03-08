@@ -1,41 +1,42 @@
 import socket
 import random
-import time
 import json
-from datetime import datetime
-from src.helpers.date import get_next_trading_day
+
+from clock import wait_for_tick, ack
 from src.helpers import config
 
 PORT = 9999
 
+
 def run_server():
     current_prices = {ticker: price for ticker, price in config.ALL_STOCKS[:12]}
-    current_date = datetime(2020, 1, 1)
 
     ssocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ssocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     ssocket.bind(('', PORT))
     ssocket.listen(1)
-    ssocket.setblocking(False)  # non-blocking accept
+    ssocket.setblocking(False)
     print(f"SE1 Server ready on port {PORT}")
 
     client = None
+    tick = 0
 
     try:
         while True:
+            # ── Wait for coordinator to publish this tick ──────────────────
+            date_str = wait_for_tick(tick)
+            print(f"[SE1] Tick {tick} → {date_str}")
+
             # Try to accept a new connection without blocking
             try:
                 c, addr = ssocket.accept()
                 client = c
-                client.setblocking(False)  # non-blocking send
-                print(f"Client connected from {addr}")
+                client.setblocking(False)
+                print(f"[SE1] Client connected from {addr}")
             except BlockingIOError:
-                pass  # no client waiting, that's fine
+                pass
 
-            # Always advance the date and compute prices
-            valid_date = get_next_trading_day(current_date)
-            date_str = valid_date.strftime('%Y-%m-%d')
-
+            # Evolve prices and emit
             for ticker in current_prices:
                 current_prices[ticker] *= (1 + random.uniform(-0.03, 0.03))
                 msg = json.dumps({
@@ -44,24 +45,25 @@ def run_server():
                     "price": round(current_prices[ticker], 2)
                 })
 
-                # Only send if a client is connected
                 if client:
                     try:
                         client.send((msg + '\n').encode())
                     except (ConnectionResetError, BrokenPipeError, BlockingIOError):
-                        print("Client disconnected.")
+                        print("[SE1] Client disconnected.")
                         client.close()
                         client = None
 
-            current_date = valid_date
-            time.sleep(5)
+            # ── Signal coordinator that SE1 is done with this tick ─────────
+            ack("se1")
+            tick += 1
 
     except KeyboardInterrupt:
-        print("\nServer shutting down.")
+        print("\n[SE1] Server shutting down.")
     finally:
         if client:
             client.close()
         ssocket.close()
+
 
 if __name__ == "__main__":
     run_server()

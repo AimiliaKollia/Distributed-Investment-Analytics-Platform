@@ -20,7 +20,7 @@ class InvestorEngine:
             value_serializer=lambda v: json.dumps(v).encode('utf-8'),
             request_timeout_ms=5000,
             metadata_max_age_ms=30000,
-            acks='all'  # wait for broker acknowledgement
+            acks='all'
         )
 
     def process_message(self, data):
@@ -35,7 +35,6 @@ class InvestorEngine:
             current_count = len(self.daily_cache[date])
             required_count = len(self.all_watched_stocks)
 
-            # DEBUG PRINT: This will tell you exactly why the gate is stuck
             print(
                 f"[{self.investor_name}] Date: {date} | Collected: {current_count}/{required_count} | Just added: {ticker}")
 
@@ -43,21 +42,18 @@ class InvestorEngine:
                 print(f"--- [OK] Gate opened for {date}. Calculating NAV... ---")
                 self.calculate_daily_metrics(date)
             elif current_count > required_count:
-                # This would imply duplicate tickers for the same date
                 print(f"!!! [ERROR] Duplicate data detected for {date}")
 
     def calculate_daily_metrics(self, date):
-        """Calculates NAV, Change, and % Change for each managed portfolio """
+        """Calculates NAV, Change, and % Change for each managed portfolio."""
         prices = self.daily_cache[date]
 
         for p_name, p_qty in self.portfolios.items():
-            # Total evaluation of assets
             total_assets = sum(prices[s] * qty for s, qty in p_qty.items())
 
             # Simulated liabilities (65% to 70%)
             liabilities = total_assets * random.uniform(0.65, 0.70)
 
-            # NAV Calculation (Using 1 share for simplicity per PDF example)
             current_nav = total_assets - liabilities
 
             change = 0.0
@@ -76,11 +72,10 @@ class InvestorEngine:
                 "Daily_Change_Percent": round(pct_change, 2)
             }
 
-            # Write to 'portfolios' topic with portfolio name as key
             self.producer.send('portfolios', key=p_name.encode('utf-8'), value=payload)
             print(f"[{self.investor_name}] Published {p_name} stats for {date}")
 
-        del self.daily_cache[date]  # Cleanup memory
+        del self.daily_cache[date]
 
     def start(self):
         """Runs the TCP and Kafka listeners in separate threads."""
@@ -90,12 +85,24 @@ class InvestorEngine:
                 s.connect(('localhost', 9999))
                 f = s.makefile()
                 for line in f:
-                    if line: self.process_message(json.loads(line))
+                    if line:
+                        self.process_message(json.loads(line))
 
         def kafka_listener():
-            consumer = KafkaConsumer('StockExchange', bootstrap_servers=['localhost:9092'],
-                                     value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-                                    api_version=(0, 10))
+            consumer = KafkaConsumer(
+                'StockExchange',
+                bootstrap_servers=['localhost:9092'],
+                value_deserializer=lambda x: json.loads(x.decode('utf-8')),
+                # FIX 1: Give the consumer a stable group ID so offsets are
+                # tracked and committed across restarts.
+                group_id=f'investor-{self.investor_name}',
+                # FIX 2: Read from the beginning so messages published before
+                # this consumer started are not silently skipped.
+                auto_offset_reset='earliest',
+                # FIX 3: Removed api_version=(0,10) — let the client
+                # auto-negotiate with the broker. Hardcoding an old version
+                # causes silent failures on modern Kafka brokers (2.x+).
+            )
             for msg in consumer:
                 self.process_message(msg.value)
 
