@@ -18,11 +18,9 @@ class InvestorEngine:
         self.producer = KafkaProducer(
             bootstrap_servers=['127.0.0.1:9092'],
             value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-            # Force a version that doesn't trigger the metadata version error
-            api_version=(0, 10, 1),
-            # Ensure the producer doesn't wait indefinitely if the broker is unreachable
             request_timeout_ms=5000,
-            metadata_max_age_ms=30000
+            metadata_max_age_ms=30000,
+            acks='all'  # wait for broker acknowledgement
         )
 
     def process_message(self, data):
