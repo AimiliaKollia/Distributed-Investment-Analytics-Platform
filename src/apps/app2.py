@@ -13,8 +13,8 @@ INVESTOR_PORTFOLIOS = {
 
 MYSQL_URL = "jdbc:mysql://localhost:3306/InvestorsDB"
 MYSQL_PROPERTIES = {
-    "user": "bigdatauser",
-    "password": "bigdatapass",
+    "user": "itc6107",
+    "password": "itc6107",
     "driver": "com.mysql.cj.jdbc.Driver"
 }
 

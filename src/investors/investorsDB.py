@@ -6,8 +6,8 @@ import mysql.connector
 
 conn = mysql.connector.connect(
     host='localhost',
-    user='bigdatauser',
-    password='bigdatapass'
+    user='itc6107',
+    password='itc6107'
 )
 cursor = conn.cursor()
 
