@@ -11,12 +11,15 @@ INVESTOR_PORTFOLIOS = {
     "Inv3": ["P31", "P32"],
 }
 
-MYSQL_URL = "jdbc:mysql://localhost:3306/InvestorsDB"
+MYSQL_URL = "jdbc:mysql://127.0.0.1:3306/InvestorsDB"
 MYSQL_PROPERTIES = {
     "user": "itc6107",
     "password": "itc6107",
     "driver": "com.mysql.cj.jdbc.Driver"
 }
+
+PERIOD_START_YEAR = 2020
+PERIOD_END_YEAR = 2024
 
 
 def load_portfolio_table(spark, table_name):
@@ -27,10 +30,10 @@ def load_portfolio_table(spark, table_name):
     )
 
 
-def analyze_portfolio(df, table_name):
+def analyze_portfolio(df):
     df = df.withColumn("Date", col("Date").cast("date"))
 
-    # Overall stats
+    # Full-history overall stats
     overall_stats = df.select(
         spark_min("Daily_NAV_Change").alias("min_daily_change"),
         spark_max("Daily_NAV_Change").alias("max_daily_change"),
@@ -40,48 +43,65 @@ def analyze_portfolio(df, table_name):
         stddev("NAV_per_Share").alias("std_nav_per_share")
     ).collect()[0]
 
-    # Yearly stats
+    # Full-history yearly stats
     yearly_stats = (
         df.withColumn("Year", year("Date"))
-          .groupBy("Year")
-          .agg(
-              spark_min("Daily_NAV_Change").alias("min_daily_change"),
-              spark_max("Daily_NAV_Change").alias("max_daily_change"),
-              spark_min("Daily_NAV_Change_Pct").alias("min_daily_change_pct"),
-              spark_max("Daily_NAV_Change_Pct").alias("max_daily_change_pct")
-          )
-          .orderBy("Year")
-          .collect()
+        .groupBy("Year")
+        .agg(
+            spark_min("Daily_NAV_Change").alias("min_daily_change"),
+            spark_max("Daily_NAV_Change").alias("max_daily_change"),
+            spark_min("Daily_NAV_Change_Pct").alias("min_daily_change_pct"),
+            spark_max("Daily_NAV_Change_Pct").alias("max_daily_change_pct")
+        )
+        .orderBy("Year")
+        .collect()
     )
 
-    # Monthly averages
+    # Given-period stats
+    period_df = df.filter(
+        (year("Date") >= PERIOD_START_YEAR) &
+        (year("Date") <= PERIOD_END_YEAR)
+    )
+
+    if period_df.count() > 0:
+        period_stats = period_df.select(
+            avg("NAV_per_Share").alias("avg_nav_per_share_period"),
+            stddev("NAV_per_Share").alias("std_nav_per_share_period")
+        ).collect()[0]
+    else:
+        period_stats = None
+
+    # Full-history monthly averages, most recent month first
     monthly_avg = (
         df.withColumn("Year", year("Date"))
-          .withColumn("Month", month("Date"))
-          .groupBy("Year", "Month")
-          .agg(avg("NAV_per_Share").alias("avg_nav_per_share"))
-          .orderBy(col("Year").desc(), col("Month").desc())
-          .collect()
+        .withColumn("Month", month("Date"))
+        .groupBy("Year", "Month")
+        .agg(avg("NAV_per_Share").alias("avg_nav_per_share"))
+        .orderBy(col("Year").desc(), col("Month").desc())
+        .collect()
     )
 
-    return overall_stats, yearly_stats, monthly_avg
+    return overall_stats, yearly_stats, period_stats, monthly_avg
 
 
-def save_report(table_name, overall_stats, yearly_stats, monthly_avg, output_dir="output"):
+def save_report(table_name, overall_stats, yearly_stats, period_stats, monthly_avg, output_dir="output"):
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{table_name}_stats.txt")
 
+    std_full = overall_stats["std_nav_per_share"]
+    std_full = std_full if std_full is not None else "N/A"
+
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(f"Portfolio: {table_name}\n")
-        f.write("=" * 50 + "\n\n")
+        f.write("=" * 60 + "\n\n")
 
-        f.write("OVERALL STATISTICS\n")
+        f.write("FULL HISTORY STATISTICS\n")
         f.write(f"Min Daily NAV Change: {overall_stats['min_daily_change']}\n")
         f.write(f"Max Daily NAV Change: {overall_stats['max_daily_change']}\n")
         f.write(f"Min Daily NAV Change %: {overall_stats['min_daily_change_pct']}\n")
         f.write(f"Max Daily NAV Change %: {overall_stats['max_daily_change_pct']}\n")
         f.write(f"Average NAV per Share: {overall_stats['avg_nav_per_share']}\n")
-        f.write(f"Std Dev NAV per Share: {overall_stats['std_nav_per_share']}\n\n")
+        f.write(f"Std Dev NAV per Share: {std_full}\n\n")
 
         f.write("YEARLY STATISTICS\n")
         for row in yearly_stats:
@@ -93,7 +113,16 @@ def save_report(table_name, overall_stats, yearly_stats, monthly_avg, output_dir
                 f"Max %={row['max_daily_change_pct']}\n"
             )
 
-        f.write("\nMONTHLY AVERAGE NAV PER SHARE\n")
+        f.write(f"\nPERIOD STATISTICS ({PERIOD_START_YEAR}-{PERIOD_END_YEAR})\n")
+        if period_stats is None:
+            f.write("No data available for this period.\n")
+        else:
+            std_period = period_stats["std_nav_per_share_period"]
+            std_period = std_period if std_period is not None else "N/A"
+            f.write(f"Average NAV per Share: {period_stats['avg_nav_per_share_period']}\n")
+            f.write(f"Std Dev NAV per Share: {std_period}\n")
+
+        f.write("\nMONTHLY AVERAGE NAV PER SHARE (MOST RECENT FIRST)\n")
         for row in monthly_avg:
             f.write(
                 f"{row['Year']}-{row['Month']:02d}: "
@@ -135,8 +164,8 @@ def main():
                 print(f"[APP2] Table {table_name} is empty. Skipping.")
                 continue
 
-            overall_stats, yearly_stats, monthly_avg = analyze_portfolio(df, table_name)
-            save_report(table_name, overall_stats, yearly_stats, monthly_avg)
+            overall_stats, yearly_stats, period_stats, monthly_avg = analyze_portfolio(df)
+            save_report(table_name, overall_stats, yearly_stats, period_stats, monthly_avg)
 
     finally:
         spark.stop()
@@ -144,4 +173,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
