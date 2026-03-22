@@ -16,8 +16,8 @@ PORTFOLIO_TABLE_MAP = {
 def get_db_connection():
     return mysql.connector.connect(
         host="localhost",
-        user="bigdatauser",
-        password="bigdatapass",
+        user="itc6107",
+        password="itc6107",
         database="InvestorsDB",
     )
 
