@@ -82,19 +82,19 @@ class InvestorEngine:
             net_assets = total_assets - liabilities
 
             total_portfolio_shares = sum(p_qty.values())
-            nav_per_share = net_assets / total_portfolio_shares
+            nav = net_assets / total_portfolio_shares
 
             change = 0.0
             pct_change = 0.0
             if self.prev_navs[p_name] is not None:
-                change = nav_per_share - self.prev_navs[p_name]
+                change = nav - self.prev_navs[p_name]
                 pct_change = (change / self.prev_navs[p_name]) * 100
 
-            self.prev_navs[p_name] = nav_per_share
+            self.prev_navs[p_name] = nav
 
             payload = {
                 "Date": date,
-                "NAV_per_Share": round(nav_per_share, 2),
+                "NAV": round(nav, 2),
                 "Daily_NAV_Change": round(change, 2),
                 "Daily_NAV_Change_Pct": round(pct_change, 2),
             }
