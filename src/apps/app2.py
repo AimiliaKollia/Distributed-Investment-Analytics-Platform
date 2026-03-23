@@ -88,7 +88,7 @@ def save_report(table_name, overall_stats, yearly_stats, period_stats, monthly_a
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{table_name}_stats.txt")
 
-    std_full = overall_stats["std_nav_per_share"]
+    std_full = overall_stats["std_nav"]
     std_full = std_full if std_full is not None else "N/A"
 
     with open(output_path, "w", encoding="utf-8") as f:
