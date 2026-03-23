@@ -45,7 +45,7 @@ def main():
         print(f"No NAV data found for {portfolio_name} in the period {start_date_str} to {end_date_str}")
         sys.exit(0)
  
-    nav_values = [doc["NAV_per_Share"] for doc in docs]
+    nav_values = [doc["NAV"] for doc in docs]
     num_values = len(nav_values)
     min_nav = min(nav_values)
     max_nav = max(nav_values)
