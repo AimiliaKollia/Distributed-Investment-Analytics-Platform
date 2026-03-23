@@ -39,8 +39,8 @@ def analyze_portfolio(df):
         spark_max("Daily_NAV_Change").alias("max_daily_change"),
         spark_min("Daily_NAV_Change_Pct").alias("min_daily_change_pct"),
         spark_max("Daily_NAV_Change_Pct").alias("max_daily_change_pct"),
-        avg("NAV_per_Share").alias("avg_nav_per_share"),
-        stddev("NAV_per_Share").alias("std_nav_per_share")
+        avg("NAV").alias("avg_nav"),
+        stddev("NAV").alias("std_nav")
     ).collect()[0]
 
     # Full-history yearly stats
@@ -65,8 +65,8 @@ def analyze_portfolio(df):
 
     if period_df.count() > 0:
         period_stats = period_df.select(
-            avg("NAV_per_Share").alias("avg_nav_per_share_period"),
-            stddev("NAV_per_Share").alias("std_nav_per_share_period")
+            avg("NAV").alias("avg_nav_period"),
+            stddev("NAV").alias("std_nav")
         ).collect()[0]
     else:
         period_stats = None
@@ -76,7 +76,7 @@ def analyze_portfolio(df):
         df.withColumn("Year", year("Date"))
         .withColumn("Month", month("Date"))
         .groupBy("Year", "Month")
-        .agg(avg("NAV_per_Share").alias("avg_nav_per_share"))
+        .agg(avg("NAV").alias("avg_nav"))
         .orderBy(col("Year").desc(), col("Month").desc())
         .collect()
     )
@@ -100,8 +100,8 @@ def save_report(table_name, overall_stats, yearly_stats, period_stats, monthly_a
         f.write(f"Max Daily NAV Change: {overall_stats['max_daily_change']}\n")
         f.write(f"Min Daily NAV Change %: {overall_stats['min_daily_change_pct']}\n")
         f.write(f"Max Daily NAV Change %: {overall_stats['max_daily_change_pct']}\n")
-        f.write(f"Average NAV per Share: {overall_stats['avg_nav_per_share']}\n")
-        f.write(f"Std Dev NAV per Share: {std_full}\n\n")
+        f.write(f"Average NAV : {overall_stats['avg_nav']}\n")
+        f.write(f"Std Dev NAV : {std_full}\n\n")
 
         f.write("YEARLY STATISTICS\n")
         for row in yearly_stats:
@@ -117,16 +117,16 @@ def save_report(table_name, overall_stats, yearly_stats, period_stats, monthly_a
         if period_stats is None:
             f.write("No data available for this period.\n")
         else:
-            std_period = period_stats["std_nav_per_share_period"]
+            std_period = period_stats["std_nav_period"]
             std_period = std_period if std_period is not None else "N/A"
-            f.write(f"Average NAV per Share: {period_stats['avg_nav_per_share_period']}\n")
-            f.write(f"Std Dev NAV per Share: {std_period}\n")
+            f.write(f"Average NAV : {period_stats['avg_nav_period']}\n")
+            f.write(f"Std Dev NAV : {std_period}\n")
 
-        f.write("\nMONTHLY AVERAGE NAV PER SHARE (MOST RECENT FIRST)\n")
+        f.write("\nMONTHLY AVERAGE NAV (MOST RECENT FIRST)\n")
         for row in monthly_avg:
             f.write(
                 f"{row['Year']}-{row['Month']:02d}: "
-                f"{row['avg_nav_per_share']}\n"
+                f"{row['avg_nav']}\n"
             )
 
     print(f"[APP2] Report saved: {output_path}")
