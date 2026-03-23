@@ -66,7 +66,7 @@ def analyze_portfolio(df):
     if period_df.count() > 0:
         period_stats = period_df.select(
             avg("NAV").alias("avg_nav_period"),
-            stddev("NAV").alias("std_nav")
+            stddev("NAV").alias("std_nav_period")
         ).collect()[0]
     else:
         period_stats = None
