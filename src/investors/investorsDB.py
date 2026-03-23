@@ -1,6 +1,3 @@
-# CREATE USER 'bigdatauser'@'localhost' IDENTIFIED BY 'bigdatapass';
-# GRANT ALL PRIVILEGES ON *.* TO 'bigdatauser'@'localhost' WITH GRANT OPTION;
-# FLUSH PRIVILEGES;
 
 import mysql.connector
 
@@ -30,7 +27,6 @@ cursor.execute("""
     CREATE TABLE IF NOT EXISTS Portfolios (
         Id         INT          NOT NULL AUTO_INCREMENT,
         Name       VARCHAR(50)  NOT NULL UNIQUE,
-        Cumulative DOUBLE       NOT NULL DEFAULT 0,
         PRIMARY KEY (Id)
     )
 """)
