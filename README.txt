@@ -7,3 +7,5 @@ python src/investors/inv2.py
 python src/investors/inv3.py
 python src/apps/app1.py
 python src/apps/app2.py Invx
+python src/apps/app3.py
+python src/apps/app4.py P11 2020-09-19 2020-09-21
