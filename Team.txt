@@ -2,3 +2,5 @@ Kollia: 25%
 Kontoudakis: 25%
 Lampropoulou: 25%
 Skiada: 25%
+
+This project was a mutual effort by all four of us. We collaborated effectively by contributing to each part of the project equally.
