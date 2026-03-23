@@ -93,7 +93,7 @@ for investor, portfolios_list in portfolio_map.items():
         cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS `{table_name}` (
                 Date              DATE         NOT NULL,
-                NAV_per_Share     DOUBLE       NOT NULL,
+                NAV               DOUBLE       NOT NULL,
                 Daily_NAV_Change  DOUBLE       NOT NULL DEFAULT 0,
                 Daily_NAV_Change_Pct DOUBLE    NOT NULL DEFAULT 0,
                 PRIMARY KEY (Date)
