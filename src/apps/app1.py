@@ -53,7 +53,7 @@ def main():
                 continue
 
             date_val = payload.get("Date")
-            nav_val = payload.get("NAV_per_Share")
+            nav_val = payload.get("NAV")
             change_val = payload.get("Daily_NAV_Change")
             pct_val = payload.get("Daily_NAV_Change_Pct")
 
@@ -63,10 +63,10 @@ def main():
 
             sql = f"""
                 INSERT INTO `{table_name}`
-                (Date, NAV_per_Share, Daily_NAV_Change, Daily_NAV_Change_Pct)
+                (Date, NAV, Daily_NAV_Change, Daily_NAV_Change_Pct)
                 VALUES (%s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
-                    NAV_per_Share = VALUES(NAV_per_Share),
+                    NAV = VALUES(NAV),
                     Daily_NAV_Change = VALUES(Daily_NAV_Change),
                     Daily_NAV_Change_Pct = VALUES(Daily_NAV_Change_Pct)
             """
