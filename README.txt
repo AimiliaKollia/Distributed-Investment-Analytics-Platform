@@ -4,16 +4,16 @@ helpers/ contains shared logic used across the project (e.g., configuration, dat
 
 Run all commands from the root of the project:
 
-python src/investors/investorsDB.py
-python src/se1_server.py
-python src/se2_server.py
-python src/investors/inv1.py
-python src/investors/inv2.py
-python src/investors/inv3.py
-python src/apps/app1.py
-python src/apps/app2.py <InvestorName>
-python src/apps/app3.py
-python src/apps/app4.py <PortfolioName> <StartDate> <EndDate>
+python3 src/investors/investorsDB.py
+python3 src/se1_server.py
+python3 src/se2_server.py
+python3 src/investors/inv1.py
+python3 src/investors/inv2.py
+python3 src/investors/inv3.py
+python3 src/apps/app1.py
+python3 src/apps/app2.py <InvestorName>
+python3 src/apps/app3.py
+python3 src/apps/app4.py <PortfolioName> <StartDate> <EndDate>
 
 Parameters:
 App2
@@ -24,13 +24,13 @@ Inv2
 Inv3
 
 Example
-python src/apps/app2.py Inv1
+python3 src/apps/app2.py Inv1
 
 App4
 <PortfolioName> = one of: P11, P12, P21, P22, P31, P32
 <StartDate> and <EndDate> format: YYYY-MM-DD
 
 Example
-python src/apps/app4.py P11 2020-09-19 2020-09-21
+python3 src/apps/app4.py P11 2020-09-19 2020-09-21
 
 
