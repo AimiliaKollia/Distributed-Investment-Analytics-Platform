@@ -1,0 +1,83 @@
+**Distributed Investment Analytics Platform**
+
+A real-time big data system that simulates stock exchanges, institutional investors, and portfolio analytics using distributed technologies.
+
+**Overview**
+
+This project models a financial data ecosystem where:
+
+Stock exchanges generate daily market data
+Investors process and evaluate portfolios
+Data pipelines stream and persist results
+Analytics applications extract insights
+
+The system is built using modern big data architecture principles.
+
+⚙️ Tech Stack:
+Apache Kafka (data streaming)
+Apache Spark (analytics)
+MySQL (relational storage)
+MongoDB (NoSQL storage)
+Python (core implementation)
+
+
+**System Components:**
+
+Stock Exchange Servers
+Simulate daily stock prices
+Emit JSON data streams
+One uses sockets, one streams to Kafka
+
+**Institutional Investors**
+Process stock data streams
+Maintain multiple portfolios
+Compute:
+Net Asset Value (NAV)
+Daily changes
+Percentage variations
+
+**Data Storage Layer**
+MySQL
+Structured investor & portfolio data
+Historical NAV tracking
+MongoDB
+Portfolio-specific collections
+Flexible time-series storage
+
+**Data Pipeline Applications**
+Kafka consumers for real-time ingestion
+Database synchronization services
+Spark-based analytics engine
+
+**Analytics**
+Portfolio performance metrics
+Historical statistics (min/max/avg)
+Time-based aggregations
+Reporting per investor and portfolio
+
+**📁 Project Structure**
+.
+├── README.md
+├── project_description.txt
+├── Architecture Diagram.png
+└── src/
+    ├── apps/
+    ├── helpers/
+    └── investors/
+
+**▶️ How to Run**
+
+Start Kafka
+Run stock exchange servers
+Start investor services
+Run database ingestion apps
+Execute analytics jobs
+👥 Team
+
+Developed as part of a group project (4 members).
+
+**📌 Key Highlights**
+Real-time streaming architecture
+Hybrid storage (SQL + NoSQL)
+Distributed processing with Spark
+Event-driven design using Kafka
